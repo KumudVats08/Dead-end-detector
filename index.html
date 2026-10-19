@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dead-End Detector</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;600;800&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --chalk:#F1F4F5; --paper:#FAFBFB; --ink:#16233B; --muted:#586377;
+  --rule:#C5CDD6; --sign:#F4C20D; --sign-ink:#1B1B1B; --alert:#9B2C2C;
+  --sans:"Schibsted Grotesk",system-ui,sans-serif;
+  --serif:"Source Serif 4",Georgia,serif;
+}
+*{box-sizing:border-box}
+html{background:var(--chalk);color:var(--ink)}
+body{margin:0;font:400 1.0625rem/1.65 var(--serif);padding:0 1.25rem 4rem}
+main{max-width:56rem;margin:0 auto}
+a{color:var(--ink);text-decoration-thickness:1px;text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+h1,h2,h3,button,.ui{font-family:var(--sans)}
+header{padding:2.5rem 0 1rem;font:600 1rem var(--sans)}
+h1{font-size:clamp(2rem,5.5vw,3.4rem);line-height:1.08;letter-spacing:-.02em;font-weight:800;margin:2.5rem 0 1.5rem;max-width:20ch}
+h2{font-size:1.35rem;font-weight:800;margin:3.5rem 0 .4rem;letter-spacing:-.01em}
+.lede{color:var(--muted);margin:0 0 1.2rem;max-width:62ch}
+textarea{width:100%;min-height:5.5rem;resize:vertical;border:0;border-bottom:2px solid var(--ink);background:var(--paper);
+  font:400 1.25rem/1.5 var(--serif);color:var(--ink);padding:.8rem .9rem;border-radius:0}
+textarea::placeholder{color:#7A8596}
+.row{display:flex;gap:1.2rem;align-items:center;margin-top:1rem;flex-wrap:wrap}
+button{font-size:1rem;font-weight:600;background:var(--ink);color:var(--paper);border:0;padding:.75rem 1.4rem;border-radius:3px;cursor:pointer}
+button:disabled{opacity:.45;cursor:not-allowed}
+label.demo{font:400 .95rem var(--sans);color:var(--muted);display:flex;gap:.45rem;align-items:center}
+.stages{display:flex;flex-wrap:wrap;gap:.4rem 1.4rem;margin:2rem 0 0;padding:0;list-style:none;font:400 .95rem var(--sans);color:var(--muted)}
+.stages li{padding-bottom:3px;border-bottom:2px solid transparent;transition:border-color .2s,color .2s}
+.stages li.done{color:var(--ink)}
+.stages li.now{color:var(--ink);font-weight:600;border-color:var(--sign)}
+.note{border-left:4px solid var(--sign);background:var(--paper);padding:.7rem 1rem;margin:1.5rem 0;font:400 .95rem/1.5 var(--sans)}
+.note.err{border-color:var(--alert)}
+[hidden]{display:none!important}
+/* overlap summary */
+.overlap{margin-top:2.5rem;padding:1.2rem 0;border-top:2px solid var(--ink);border-bottom:1px solid var(--rule);display:grid;grid-template-columns:auto 1fr;gap:.3rem 2rem;align-items:baseline}
+.overlap .n{font:800 2.6rem/1 var(--sans);letter-spacing:-.02em}
+.overlap .k{font:600 1rem var(--sans)}
+.overlap .c{grid-column:1/-1;margin:.5rem 0 0;font:400 .9rem/1.5 var(--sans);color:var(--muted);max-width:62ch}
+/* closest prior work */
+.work{margin:0;padding:0;list-style:none;border-top:1px solid var(--rule)}
+.work>li{border-bottom:1px solid var(--rule)}
+.work summary{cursor:pointer;padding:1rem 0;display:grid;grid-template-columns:1fr 7rem;gap:.3rem 1.5rem;align-items:center;list-style:none}
+.work summary::-webkit-details-marker{display:none}
+.work .t{font:600 1.05rem/1.35 var(--sans)}
+.work .s{grid-column:1;font:400 .85rem var(--sans);color:var(--muted)}
+.gauge{grid-column:2;grid-row:1/3;height:6px;background:var(--rule);position:relative}
+.gauge i{position:absolute;inset:0 auto 0 0;background:var(--ink)}
+.detail{padding:.2rem 0 1.4rem;display:grid;grid-template-columns:9rem 1fr;gap:.55rem 1.2rem}
+.detail dt{font:600 .9rem var(--sans);color:var(--muted)}
+.detail dd{margin:0}
+.detail q{display:block;color:var(--muted);font-style:italic;font-size:.95rem;margin-top:.15rem}
+.unk{color:#7A8596;font-style:italic}
+.open{font:400 .9rem var(--sans);margin:.8rem 0 0}
+/* comparison table */
+.scroll{overflow-x:auto;border:1px solid var(--rule);background:var(--paper)}
+table{border-collapse:collapse;width:100%;min-width:54rem;font:400 .9rem/1.45 var(--sans)}
+th,td{text-align:left;vertical-align:top;padding:.65rem .8rem;border-bottom:1px solid var(--rule)}
+th{font-weight:600;background:var(--chalk);position:sticky;top:0}
+td:first-child{font-weight:600;min-width:11rem}
+/* crowded */
+.bars{margin:1rem 0;padding:0;list-style:none;display:grid;gap:.5rem;font:400 .95rem var(--sans)}
+.bars li{display:grid;grid-template-columns:minmax(8rem,16rem) 1fr 2rem;gap:1rem;align-items:center}
+.bars .b{height:14px;background:var(--ink)}
+/* dead-end signs */
+.signs{display:grid;gap:1.4rem;margin-top:1.4rem}
+.sign{display:grid;grid-template-columns:5.2rem 1fr;gap:1.2rem;align-items:start}
+.diamond{width:3.6rem;height:3.6rem;margin:.9rem .8rem;background:var(--sign);border:3px solid var(--sign-ink);transform:rotate(45deg);
+  display:grid;place-items:center;border-radius:4px}
+.diamond span{transform:rotate(-45deg);font:800 1.6rem var(--sans);color:var(--sign-ink)}
+.sign p{margin:.2rem 0 .4rem}
+.sign small{font:400 .85rem var(--sans);color:var(--muted)}
+.sign small a{margin-right:.9rem}
+footer{margin-top:4rem;padding-top:1rem;border-top:1px solid var(--rule);font:400 .9rem var(--sans);color:var(--muted)}
+details.log summary{cursor:pointer;font:400 .9rem var(--sans);color:var(--muted);margin-top:2.5rem}
+details.log ul{font:400 .85rem var(--sans);color:var(--muted);padding-left:1.1rem}
+@media (max-width:560px){
+  .work summary{grid-template-columns:1fr}.gauge{grid-column:1;grid-row:auto;width:7rem}
+  .detail{grid-template-columns:1fr}.bars li{grid-template-columns:1fr 1fr 2rem}
+  .sign{grid-template-columns:3.6rem 1fr;gap:.6rem}.diamond{width:2.6rem;height:2.6rem;margin:.6rem .5rem}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+<header>Dead-End Detector</header>
+
+<h1>What are you about to build?</h1>
+<form id="form">
+  <label class="lede" for="idea">Describe the project in a sentence or two. We search papers, code and project pages for work that already covers it.</label>
+  <textarea id="idea" placeholder="Offline crop disease detection from leaf photos" required></textarea>
+  <div class="row">
+    <button id="go" type="submit">Check prior work</button>
+    <label class="demo"><input type="checkbox" id="demo"> Use saved sample results</label>
+  </div>
+</form>
+
+<ol class="stages" id="stages" hidden>
+  <li data-s="Searching">Searching</li><li data-s="Fetching">Fetching pages</li>
+  <li data-s="Extracting">Reading</li><li data-s="Ranking">Ranking</li><li data-s="Analyzing">Finding gaps</li>
+</ol>
+<div id="notice" class="note" hidden></div>
+
+<section id="out" hidden>
+  <div class="overlap" id="overlap"></div>
+  <h2>Closest prior work</h2>
+  <p class="lede">Ranked by similarity to your idea. Open a row to see what each source states and the sentence it came from.</p>
+  <ul class="work" id="work"></ul>
+
+  <h2>Side by side</h2>
+  <p class="lede">Fields marked unknown were not stated in the source.</p>
+  <div class="scroll"><table id="table"></table></div>
+
+  <h2>Where the sources pile up</h2>
+  <p class="lede" id="crowdLede"></p>
+  <ul class="bars" id="bars"></ul>
+
+  <h2>Possible dead ends and openings</h2>
+  <p class="lede">These are hypotheses drawn only from the sources searched. Check the linked pages before you rely on them.</p>
+  <div class="signs" id="signs"></div>
+
+  <details class="log"><summary>What was searched</summary><div id="log"></div></details>
+</section>
+
+<footer>Based on a limited set of sources. This is a starting point for your own search, not a guarantee that an idea is new or taken.</footer>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const safe = u => /^https?:\/\//i.test(u) ? u : "#";
+const host = u => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return u; } };
+const label = f => ({dataset_eval: "Data and evaluation"}[f] || f.charAt(0).toUpperCase() + f.slice(1));
+const val = v => (!v || String(v).toLowerCase() === "unknown") ? '<span class="unk">unknown</span>' : esc(v);
+
+const stages = [...document.querySelectorAll("#stages li")];
+function setStage(name) {
+  const i = stages.findIndex(li => li.dataset.s === name);
+  stages.forEach((li, k) => { li.className = k < i ? "done" : k === i ? "now" : ""; });
+}
+
+function render(res, fields) {
+  const recs = res.records || [];
+  const top = Math.max(0, ...recs.map(r => Number(r.score) || 0));
+  const near = recs.filter(r => (Number(r.score) || 0) >= 0.5).length;
+  $("#overlap").innerHTML = recs.length
+    ? `<span class="n">${top.toFixed(2)}</span><span class="k">Closest match in the sources searched. ${near} of ${recs.length} sources score 0.50 or higher.</span>
+       <p class="c">This measures how much existing work overlaps your idea in the sources we searched. Similarity is not proof of duplication, and a low reading is not proof that an idea is new. The 0.50 line is a rough marker, not a verdict.</p>`
+    : `<span class="k">Limited matches found in the sources searched.</span>`;
+  $("#work").innerHTML = recs.map(r => `
+    <li><details><summary>
+      <span class="t">${esc(r.title || "Untitled source")}</span>
+      <span class="gauge" role="img" aria-label="Similarity ${Number(r.score || 0).toFixed(2)}"><i style="width:${Math.max(0, Math.min(1, Number(r.score) || 0)) * 100}%"></i></span>
+      <span class="s">${esc(r.source_type || "web")}, ${esc(host(r.url))}, similarity ${Number(r.score || 0).toFixed(2)}</span>
+    </summary>
+    <dl class="detail">${fields.map(f => `<dt>${label(f)}</dt><dd>${val(r[f])}${
+      r.evidence && r.evidence[f] ? `<q>${esc(r.evidence[f])}</q>` : ""}</dd>`).join("")}</dl>
+    <p class="open"><a href="${esc(safe(r.url))}" target="_blank" rel="noopener">Open the source</a></p>
+    </details></li>`).join("") || '<li class="lede">No sources could be read for this idea. Try describing it with different words.</li>';
+
+  $("#table").innerHTML = `<thead><tr><th>Source</th>${fields.map(f => `<th>${label(f)}</th>`).join("")}</tr></thead><tbody>${
+    recs.map(r => `<tr><td>${esc(r.title || "Untitled")}</td>${fields.map(f => `<td>${val(r[f])}</td>`).join("")}</tr>`).join("")}</tbody>`;
+
+  const a = res.analysis || {}, mc = Object.entries(a.method_counts || {}), max = Math.max(1, ...mc.map(e => e[1]));
+  $("#crowdLede").textContent = mc.length
+    ? "Methods that several sources share. Long bars mean the approach is well covered."
+    : "No method showed up in more than one source.";
+  $("#bars").innerHTML = mc.map(([m, n]) =>
+    `<li><span>${esc(m)}</span><span class="b" style="width:${n / max * 100}%"></span><span>${n}</span></li>`).join("");
+  if ((a.blind_spots || []).length)
+    $("#crowdLede").textContent += " Often left unstated: " + a.blind_spots.map(f => label(f).toLowerCase()).join(", ") + ".";
+
+  $("#signs").innerHTML = (a.hypotheses || []).map(h => `
+    <div class="sign"><div class="diamond" aria-hidden="true"><span>!</span></div>
+    <div><p>${esc(h.hypothesis)}</p><small>${(h.source_urls || []).map(u =>
+      `<a href="${esc(safe(u))}" target="_blank" rel="noopener">${esc(host(u))}</a>`).join("")}</small></div></div>`).join("")
+    || '<p class="lede">No gap stood out in the sources searched.</p>';
+
+  const fe = res.fetch_errors || [];
+  $("#log").innerHTML = `<p class="ui">${(res.queries || []).length} searches, ${res.urls_fetched ?? 0} pages fetched, ${fe.length} could not be fetched.</p>
+    <ul>${(res.queries || []).map(q => `<li>Search: ${esc(q.query)}</li>`).join("")}
+    ${(res.fetched_urls || []).map(u => `<li>Fetched: ${esc(u)}</li>`).join("")}
+    ${fe.map(e => `<li>Failed: ${esc(e.url)} (${esc(e.error)})</li>`).join("")}</ul>`;
+
+  $("#out").hidden = false;
+  $("#out").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
+}
+
+function say(msg, isErr) {
+  const n = $("#notice"); n.textContent = msg; n.className = "note" + (isErr ? " err" : ""); n.hidden = !msg;
+}
+
+$("#form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const idea = $("#idea").value.trim(); if (!idea) return;
+  $("#go").disabled = true; $("#out").hidden = true; say("");
+  $("#stages").hidden = false; setStage("Searching");
+  try {
+    const resp = await fetch("/api/analyze", {method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({idea, demo: $("#demo").checked})});
+    if (!resp.ok) throw new Error("The server answered with status " + resp.status + ".");
+    const reader = resp.body.getReader(), dec = new TextDecoder(); let buf = "", got = false;
+    for (;;) {
+      const {value, done} = await reader.read(); if (done) break;
+      buf += dec.decode(value, {stream: true});
+      let i; while ((i = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1); if (!line) continue;
+        const ev = JSON.parse(line);
+        if (ev.type === "step") setStage(ev.step);
+        else if (ev.type === "notice") say(ev.message + " Showing saved sample results instead.");
+        else if (ev.type === "error") throw new Error(ev.message);
+        else if (ev.type === "result") { got = true; stages.forEach(li => li.className = "done"); render(ev.result, ev.fields);
+          if (ev.result.demo && !$("#notice").textContent) say("These are saved sample results, not a live search."); }
+      }
+    }
+    if (!got) throw new Error("The run ended without results.");
+  } catch (err) {
+    say("The run stopped: " + err.message + " Check the terminal running the server for details.", true);
+  } finally { $("#go").disabled = false; }
+});
+</script>
+</body>
+</html>
