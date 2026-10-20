@@ -103,6 +103,28 @@ If live research fails, the UI also falls back to the bundled demo dataset and
 shows a warning. Demo records and their summaries are illustrative; verify
 claims against linked sources before relying on them.
 
+### Static demo
+
+To save a live result for a static-hosted copy of the frontend, set the opt-in
+flag and start the FastAPI server in PowerShell:
+
+```powershell
+$env:SAVE_DEMO = "1"
+uvicorn server:app
+```
+
+Make one live run using this demo idea:
+**“AI tool to detect fake or manipulated news images.”** Then confirm
+`static/demo_result.json` exists. Unset the flag afterward so later runs do not
+overwrite the saved result:
+
+```powershell
+Remove-Item Env:SAVE_DEMO
+```
+
+To host the demo, publish the `static/` folder, including `index.html` and
+`demo_result.json`, on GitHub Pages or Netlify.
+
 ### Smoke test
 
 Run the offline ranking smoke test:
