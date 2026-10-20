@@ -9,6 +9,9 @@ open web sources.
 It is a starting point for scoping and refining a project and not a patent search,
 systematic literature review, or guarantee that an idea is novel.
 
+<img width="1917" height="861" alt="Screenshot 2026-10-20 124536" src="https://github.com/user-attachments/assets/605dd2d8-e3de-40ba-85f8-168e77648026" />
+
+
 ## What you get from an idea
 
 After you submit an idea, the app:
