@@ -1,4 +1,4 @@
-# Research Dead-End Detector
+# ProjectXplore
 
 Research Dead-End Detector helps students, researchers, and early-stage teams
 get an evidence-led view of what may already exist around a project idea. Enter
