@@ -1,6 +1,6 @@
-# ProjectXplore
+# ResearchXplore
 
-Research Dead-End Detector helps students, researchers, and early-stage teams
+ResearchXplore helps students, researchers, and early-stage teams
 get an evidence-led view of what may already exist around a project idea. Enter
 an idea in plain language, such as **“offline crop disease detection from leaf
 photos,”** and the app searches for related papers, repositories, and other
@@ -9,7 +9,7 @@ open web sources.
 It is a starting point for scoping and refining a project and not a patent search,
 systematic literature review, or guarantee that an idea is novel.
 
-<img width="1917" height="861" alt="Screenshot 2026-10-20 124536" src="https://github.com/user-attachments/assets/605dd2d8-e3de-40ba-85f8-168e77648026" />
+<img width="1917" height="865" alt="Screenshot 2026-10-20 130115" src="https://github.com/user-attachments/assets/d9d7b531-5fb5-43f0-839b-39b989dc3294" />
 
 
 ## What you get from an idea
